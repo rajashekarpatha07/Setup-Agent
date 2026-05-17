@@ -1,0 +1,29 @@
+[project]
+name = "setup-agent"
+version = "2.1.0"
+description = "AI-powered multi-language project scaffolder — set up React, Next.js, Flask, Django, Rust, Go, and more from your phone or terminal"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain>=1.3.0",
+    "langchain-classic>=1.0.7",
+    "langchain-core>=1.4.0",
+    "langchain-groq>=1.1.2",
+    "python-dotenv>=1.2.2",
+    "requests>=2.34.1",
+    "rich>=14.0.0",
+    "click>=8.2.0",
+]
+
+[project.scripts]
+setup-agent = "cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.uv]
+package = true

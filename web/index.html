@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Agent — Dashboard</title>
+    <meta name="description" content="AI-powered multi-language project scaffolder dashboard">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+                            400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+                            800: '#3730a3', 900: '#312e81', 950: '#1e1b4b',
+                        },
+                        surface: {
+                            800: '#1e1e2e', 850: '#181825', 900: '#11111b', 950: '#0a0a14',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                    },
+                },
+            },
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0a0a14; }
+        .glass { background: rgba(30, 30, 46, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(99, 102, 241, 0.1); }
+        .glass-hover:hover { background: rgba(30, 30, 46, 0.8); border-color: rgba(99, 102, 241, 0.3); }
+        .glow { box-shadow: 0 0 20px rgba(99, 102, 241, 0.15); }
+        .glow-text { text-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+        .gradient-text { background: linear-gradient(135deg, #818cf8, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #11111b; }
+        ::-webkit-scrollbar-thumb { background: #313244; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #45475a; }
+        .badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    </style>
+</head>
+<body class="font-sans text-gray-200 min-h-screen">
+
+    <!-- Header -->
+    <header class="border-b border-gray-800/50 sticky top-0 z-50" style="background: rgba(10, 10, 20, 0.8); backdrop-filter: blur(16px);">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-lg shadow-lg shadow-brand-500/20">🤖</div>
+                <div>
+                    <h1 class="text-lg font-bold gradient-text">Setup Agent</h1>
+                    <p class="text-xs text-gray-500">Multi-Language Project Scaffolder</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full glass text-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow"></span>
+                    <span class="text-emerald-400 font-medium">Online</span>
+                </div>
+                <button onclick="refreshAll()" class="p-2 rounded-lg glass glass-hover transition-all cursor-pointer" title="Refresh">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+        <!-- Stats Row -->
+        <div id="stats-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+            <div class="stat-card glass rounded-2xl p-5">
+                <div class="text-xs text-gray-500 uppercase tracking-wider font-medium">Total Projects</div>
+                <div id="stat-total" class="text-3xl font-bold mt-1 gradient-text">-</div>
+            </div>
+            <div class="stat-card glass rounded-2xl p-5">
+                <div class="text-xs text-gray-500 uppercase tracking-wider font-medium">Success Rate</div>
+                <div id="stat-rate" class="text-3xl font-bold mt-1 text-emerald-400">-</div>
+            </div>
+            <div class="stat-card glass rounded-2xl p-5">
+                <div class="text-xs text-gray-500 uppercase tracking-wider font-medium">Avg Duration</div>
+                <div id="stat-duration" class="text-3xl font-bold mt-1 text-sky-400">-</div>
+            </div>
+            <div class="stat-card glass rounded-2xl p-5">
+                <div class="text-xs text-gray-500 uppercase tracking-wider font-medium">Failed</div>
+                <div id="stat-failed" class="text-3xl font-bold mt-1 text-red-400">-</div>
+            </div>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Create Project Card -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="glass rounded-2xl p-6 glow animate-slide-up">
+                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">🚀 New Project</h2>
+                    <div class="space-y-4">
+                        <textarea id="create-input" rows="3"
+                            placeholder='e.g., "Create a Flask API for a todo app"'
+                            class="w-full bg-surface-900 border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20 resize-none transition-all font-mono"
+                        ></textarea>
+                        <button onclick="createProject()" id="create-btn"
+                            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold text-sm hover:from-brand-500 hover:to-brand-400 transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/40 active:scale-[0.98] cursor-pointer">
+                            Create Project
+                        </button>
+                        <div id="create-status" class="text-xs text-center hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Templates Card -->
+                <div class="glass rounded-2xl p-6 animate-slide-up">
+                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">📋 Templates</h2>
+                    <div id="templates-list" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                        <div class="text-gray-600 text-sm">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Projects by Type -->
+                <div class="glass rounded-2xl p-6 animate-slide-up">
+                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">📊 Projects by Type</h2>
+                    <div id="type-chart" class="space-y-3">
+                        <div class="text-gray-600 text-sm">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project History Table -->
+            <div class="lg:col-span-2 glass rounded-2xl p-6 animate-slide-up">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">📁 Project History</h2>
+                    <span id="history-count" class="badge bg-brand-500/20 text-brand-300">0 projects</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-800/50">
+                                <th class="text-left py-3 px-3 text-xs text-gray-500 uppercase tracking-wider font-medium">#</th>
+                                <th class="text-left py-3 px-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Project</th>
+                                <th class="text-left py-3 px-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Type</th>
+                                <th class="text-left py-3 px-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Status</th>
+                                <th class="text-left py-3 px-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Duration</th>
+                                <th class="text-left py-3 px-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Date</th>
+                                <th class="text-left py-3 px-3 text-xs text-gray-500 uppercase tracking-wider font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table">
+                            <tr><td colspan="7" class="py-8 text-center text-gray-600">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Check Modal -->
+        <div id="health-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+            <div class="glass rounded-2xl p-8 max-w-lg w-full mx-4 glow animate-slide-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="health-title" class="text-lg font-bold gradient-text">Health Check</h3>
+                    <button onclick="closeHealthModal()" class="text-gray-500 hover:text-gray-300 cursor-pointer">✕</button>
+                </div>
+                <div id="health-content" class="space-y-3">
+                    <div class="text-gray-500">Running checks...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800/30 mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-xs text-gray-600">
+            Setup Agent v2.1 — Built with LangChain + Groq • <span id="footer-time"></span>
+        </div>
+    </footer>
+
+<script>
+const API = '';  // same origin
+
+// ── Data Fetching ───────────────────────────────────────────────────────
+
+async function fetchJSON(url) {
+    try {
+        const res = await fetch(API + url);
+        return await res.json();
+    } catch (e) {
+        console.error(`Failed to fetch ${url}:`, e);
+        return null;
+    }
+}
+
+async function loadStats() {
+    const data = await fetchJSON('/api/stats');
+    if (!data) return;
+
+    document.getElementById('stat-total').textContent = data.total || 0;
+    document.getElementById('stat-rate').textContent = data.total > 0 ? `${data.success_rate}%` : '-';
+    document.getElementById('stat-duration').textContent = data.avg_duration_seconds > 0 ? `${data.avg_duration_seconds}s` : '-';
+    document.getElementById('stat-failed').textContent = data.failed || 0;
+
+    // Render type chart
+    renderTypeChart(data.by_type || {});
+}
+
+async function loadHistory() {
+    const data = await fetchJSON('/api/history');
+    if (!data) return;
+
+    const projects = data.projects || [];
+    const tbody = document.getElementById('history-table');
+    const count = document.getElementById('history-count');
+    count.textContent = `${projects.length} project${projects.length !== 1 ? 's' : ''}`;
+
+    if (projects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="py-12 text-center text-gray-600"><div class="text-4xl mb-2">📭</div>No projects yet. Create one above!</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = projects.map(p => {
+        const statusMap = {
+            'success': '<span class="badge bg-emerald-500/20 text-emerald-400">Success</span>',
+            'failed': '<span class="badge bg-red-500/20 text-red-400">Failed</span>',
+            'rolled_back': '<span class="badge bg-amber-500/20 text-amber-400">Rolled Back</span>',
+            'in_progress': '<span class="badge bg-blue-500/20 text-blue-400">In Progress</span>',
+        };
+        const status = statusMap[p.status] || `<span class="badge bg-gray-500/20 text-gray-400">${p.status}</span>`;
+        const duration = p.duration_seconds > 0 ? `${p.duration_seconds}s` : '-';
+        const date = p.started_at ? new Date(p.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+        return `
+            <tr class="border-b border-gray-800/30 hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-3 text-gray-500 font-mono text-xs">${p.id}</td>
+                <td class="py-3 px-3 font-medium text-gray-200">${escHtml(p.name)}</td>
+                <td class="py-3 px-3"><span class="text-brand-300 font-mono text-xs">${escHtml(p.project_type || '-')}</span></td>
+                <td class="py-3 px-3">${status}</td>
+                <td class="py-3 px-3 font-mono text-gray-400">${duration}</td>
+                <td class="py-3 px-3 text-gray-500 text-xs">${date}</td>
+                <td class="py-3 px-3">
+                    <button onclick="runHealthCheck('${escAttr(p.name)}')"
+                        class="text-xs px-2.5 py-1 rounded-lg bg-brand-500/10 text-brand-300 hover:bg-brand-500/20 transition-colors cursor-pointer">
+                        🏥 Check
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function loadTemplates() {
+    const data = await fetchJSON('/api/templates');
+    if (!data) return;
+
+    const container = document.getElementById('templates-list');
+    const templates = data.templates || [];
+
+    const typeIcons = {
+        'react-vite': '⚛️', 'nextjs': '▲', 'express-ts': '🟢', 'typescript': '🔷',
+        'vite-vanilla': '⚡', 'svelte': '🔥', 'python-uv': '🐍', 'flask': '🌶️',
+        'django': '🎸', 'fastapi': '⚡', 'rust': '🦀', 'go': '🐹', 'flutter': '💙',
+    };
+
+    container.innerHTML = templates.map(t => `
+        <button onclick="useTemplate('${escAttr(t.description)}')"
+            class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.03] transition-all text-left group cursor-pointer">
+            <span class="text-lg">${typeIcons[t.name] || '📦'}</span>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">${escHtml(t.name)}</div>
+                <div class="text-xs text-gray-600 truncate">${escHtml(t.description)}</div>
+            </div>
+            <svg class="w-4 h-4 text-gray-700 group-hover:text-brand-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+    `).join('');
+}
+
+function renderTypeChart(byType) {
+    const container = document.getElementById('type-chart');
+    const entries = Object.entries(byType);
+
+    if (entries.length === 0) {
+        container.innerHTML = '<div class="text-gray-600 text-sm text-center py-4">No data yet</div>';
+        return;
+    }
+
+    const max = Math.max(...entries.map(([, v]) => v));
+    const colors = ['from-brand-500 to-brand-400', 'from-emerald-500 to-emerald-400', 'from-sky-500 to-sky-400', 'from-amber-500 to-amber-400', 'from-rose-500 to-rose-400', 'from-violet-500 to-violet-400'];
+
+    container.innerHTML = entries.map(([type, count], i) => {
+        const pct = max > 0 ? (count / max * 100) : 0;
+        const color = colors[i % colors.length];
+        return `
+            <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-400 font-medium">${escHtml(type)}</span>
+                    <span class="text-gray-500 font-mono">${count}</span>
+                </div>
+                <div class="h-2 bg-surface-900 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full bg-gradient-to-r ${color} transition-all duration-700" style="width: ${pct}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────
+
+async function createProject() {
+    const input = document.getElementById('create-input');
+    const btn = document.getElementById('create-btn');
+    const status = document.getElementById('create-status');
+    const message = input.value.trim();
+
+    if (!message) {
+        showStatus(status, '⚠️ Please describe your project', 'text-amber-400');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+    btn.classList.add('opacity-60');
+
+    try {
+        const res = await fetch('/api/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+            showStatus(status, `❌ ${data.error}`, 'text-red-400');
+        } else {
+            showStatus(status, '✅ Project queued! Check the history table.', 'text-emerald-400');
+            input.value = '';
+            setTimeout(() => refreshAll(), 3000);
+        }
+    } catch (e) {
+        showStatus(status, `❌ Failed: ${e.message}`, 'text-red-400');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Project';
+        btn.classList.remove('opacity-60');
+    }
+}
+
+function useTemplate(description) {
+    const input = document.getElementById('create-input');
+    input.value = `Create a ${description.toLowerCase()}`;
+    input.focus();
+}
+
+async function runHealthCheck(projectName) {
+    const modal = document.getElementById('health-modal');
+    const title = document.getElementById('health-title');
+    const content = document.getElementById('health-content');
+
+    title.textContent = `Health Check — ${projectName}`;
+    content.innerHTML = '<div class="flex items-center gap-2 text-gray-400"><svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Running checks...</div>';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const data = await fetchJSON(`/api/health/${encodeURIComponent(projectName)}`);
+    if (!data) {
+        content.innerHTML = '<div class="text-red-400">Failed to run health check</div>';
+        return;
+    }
+
+    if (data.error) {
+        content.innerHTML = `<div class="text-red-400">${escHtml(data.error)}</div>`;
+        return;
+    }
+
+    const statusColor = data.status === 'healthy' ? 'text-emerald-400' : 'text-red-400';
+    const statusIcon = data.status === 'healthy' ? '✅' : '⚠️';
+
+    let html = `
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-sm text-gray-400">Type: <span class="text-brand-300 font-mono">${escHtml(data.project_type)}</span></span>
+            <span class="font-semibold ${statusColor}">${statusIcon} ${data.status.toUpperCase()}</span>
+        </div>
+        <div class="text-xs text-gray-500 mb-2">${data.passed}/${data.total} checks passed</div>
+    `;
+
+    html += (data.checks || []).map(c => {
+        const icon = c.passed ? '✅' : '❌';
+        const color = c.passed ? 'border-emerald-500/20' : 'border-red-500/20';
+        return `
+            <div class="p-3 rounded-xl bg-surface-900 border ${color}">
+                <div class="flex items-center gap-2">
+                    <span>${icon}</span>
+                    <span class="text-sm font-medium text-gray-300">${escHtml(c.check)}</span>
+                </div>
+                <div class="text-xs text-gray-500 mt-1 ml-7 font-mono">${escHtml(c.detail)}</div>
+            </div>
+        `;
+    }).join('');
+
+    content.innerHTML = html;
+}
+
+function closeHealthModal() {
+    const modal = document.getElementById('health-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function escHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s || '';
+    return div.innerHTML;
+}
+
+function escAttr(s) {
+    return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+function showStatus(el, msg, colorClass) {
+    el.textContent = msg;
+    el.className = `text-xs text-center ${colorClass}`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 5000);
+}
+
+function refreshAll() {
+    loadStats();
+    loadHistory();
+    loadTemplates();
+}
+
+// Update footer time
+function updateTime() {
+    document.getElementById('footer-time').textContent = new Date().toLocaleTimeString();
+}
+
+// ── Init ────────────────────────────────────────────────────────────────
+
+refreshAll();
+setInterval(refreshAll, 10000);  // auto-refresh every 10s
+setInterval(updateTime, 1000);
+updateTime();
+
+// Enter key to create
+document.getElementById('create-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); createProject(); }
+});
+
+// Close modal on ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeHealthModal();
+});
+
+// Close modal on backdrop click
+document.getElementById('health-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeHealthModal();
+});
+</script>
+</body>
+</html>
