@@ -3,7 +3,23 @@ name = "setup-agent"
 version = "2.1.0"
 description = "AI-powered multi-language project scaffolder — set up React, Next.js, Flask, Django, Rust, Go, and more from your phone or terminal"
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.12"
+authors = [
+    { name = "rajashekarpatha" },
+]
+keywords = [
+    "ai", "agent", "scaffolder", "project-setup", "langchain",
+    "groq", "cli", "automation", "multi-language",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+]
 dependencies = [
     "langchain>=1.3.0",
     "langchain-classic>=1.0.7",
@@ -15,15 +31,20 @@ dependencies = [
     "click>=8.2.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/rajashekarpatha07/SetUp-Agent"
+Repository = "https://github.com/rajashekarpatha07/SetUp-Agent"
+Issues = "https://github.com/rajashekarpatha07/SetUp-Agent/issues"
+
 [project.scripts]
-setup-agent = "cli:main"
+setup-agent = "setup_agent.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
+packages = ["src/setup_agent"]
 
 [tool.uv]
 package = true

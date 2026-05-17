@@ -14,8 +14,8 @@ import threading
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
-from logger import get_logger
-from config import cfg
+from ..logger import get_logger
+from ..config import cfg
 
 log = get_logger("web")
 
@@ -35,11 +35,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         pass
 
     def do_GET(self):
-        """Handle GET requests."""
         parsed = urlparse(self.path)
         path = parsed.path
 
-        # API routes
         if path == "/api/status":
             return self._json_response(self._get_status())
         elif path == "/api/history":
@@ -57,7 +55,6 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             super().do_GET()
 
     def do_POST(self):
-        """Handle POST requests."""
         parsed = urlparse(self.path)
         path = parsed.path
 
@@ -73,7 +70,6 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self.send_error(404)
 
     def _json_response(self, data: dict, status: int = 200):
-        """Send a JSON response."""
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -81,7 +77,6 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(data, default=str).encode("utf-8"))
 
     def _serve_dashboard(self):
-        """Serve the main dashboard HTML."""
         html_path = STATIC_DIR / "index.html"
         if html_path.exists():
             self.send_response(200)
@@ -91,21 +86,15 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         else:
             self.send_error(404, "Dashboard not found")
 
-    # ── API Handlers ─────────────────────────────────────────────────────
-
     def _get_status(self) -> dict:
-        """Get current agent status."""
         import time
         return {
-            "status": "running",
-            "model": cfg.llm_model,
-            "projects_dir": str(cfg.projects_dir),
-            "timestamp": time.time(),
+            "status": "running", "model": cfg.llm_model,
+            "projects_dir": str(cfg.projects_dir), "timestamp": time.time(),
         }
 
     def _get_history(self) -> dict:
-        """Get project history."""
-        from history import history_db
+        from ..history import history_db
         try:
             projects = history_db.get_all(limit=100)
             return {"projects": projects}
@@ -113,40 +102,32 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return {"projects": [], "error": str(e)}
 
     def _get_stats(self) -> dict:
-        """Get aggregate stats."""
-        from history import history_db
+        from ..history import history_db
         try:
             return history_db.get_stats()
         except Exception as e:
             return {"error": str(e)}
 
     def _get_templates(self) -> dict:
-        """Get available templates."""
-        from templates import TEMPLATES
+        from ..templates import TEMPLATES
         templates = []
         for name, tmpl in TEMPLATES.items():
             templates.append({
-                "name": name,
-                "description": tmpl["description"],
-                "keywords": tmpl["detect"],
-                "steps": tmpl["steps"],
+                "name": name, "description": tmpl["description"],
+                "keywords": tmpl["detect"], "steps": tmpl["steps"],
             })
         return {"templates": templates}
 
     def _get_health(self, project_name: str) -> dict:
-        """Run health check on a project."""
-        from healthcheck import run_health_check
+        from ..healthcheck import run_health_check
         project_path = cfg.projects_dir / project_name
         return run_health_check(str(project_path))
 
     def _trigger_create(self, data: dict) -> dict:
-        """Trigger a new project creation."""
         message = data.get("message", "").strip()
         if not message:
             return {"error": "No message provided"}
-
-        # Import here to avoid circular imports
-        from main import handle_new_request
+        from ..main import handle_new_request
         try:
             handle_new_request(message)
             return {"status": "queued", "message": message}

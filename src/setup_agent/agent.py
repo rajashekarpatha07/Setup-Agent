@@ -14,18 +14,16 @@ from langchain_core.tools import tool
 from langchain_classic.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
-from config import cfg
-from sandbox import ALLOWED_BASE
-from templates import get_template_summary, find_template, TEMPLATES
-from logger import get_logger
-import tools as tool_functions
+from .config import cfg
+from .sandbox import ALLOWED_BASE
+from .templates import get_template_summary, find_template, TEMPLATES
+from .logger import get_logger
+from . import tools as tool_functions
 
 log = get_logger("agent")
 
 
 # ── Structured Tools ─────────────────────────────────────────────────────────
-# Using the @tool decorator creates a JSON schema from function args + docstring.
-# This lets the LLM call tools with proper typed arguments.
 
 @tool
 def create_project_dir(project_name: str) -> str:
@@ -134,16 +132,9 @@ def get_template_steps(template_name: str) -> str:
     return "\n".join(lines)
 
 
-# All tools the agent can use
 TOOLS = [
-    create_project_dir,
-    run_command,
-    create_file,
-    append_to_file,
-    file_exists,
-    read_directory,
-    list_templates,
-    get_template_steps,
+    create_project_dir, run_command, create_file, append_to_file,
+    file_exists, read_directory, list_templates, get_template_steps,
 ]
 
 
@@ -193,8 +184,6 @@ When you are done, provide a clear summary of:
 """
 
 
-# ── Prompt Template ──────────────────────────────────────────────────────────
-
 PROMPT = ChatPromptTemplate.from_messages([
     ("system", SYSTEM_PROMPT),
     ("human", "{input}"),
@@ -202,33 +191,19 @@ PROMPT = ChatPromptTemplate.from_messages([
 ])
 
 
-# ── LLM Setup ────────────────────────────────────────────────────────────────
-
 llm = ChatGroq(
     model=cfg.llm_model,
     groq_api_key=cfg.groq_api_key,
     temperature=0,
 )
 
-
-# ── Agent + Executor ─────────────────────────────────────────────────────────
-
-agent = create_tool_calling_agent(
-    llm=llm,
-    tools=TOOLS,
-    prompt=PROMPT,
-)
+agent = create_tool_calling_agent(llm=llm, tools=TOOLS, prompt=PROMPT)
 
 agent_executor = AgentExecutor(
-    agent=agent,
-    tools=TOOLS,
-    verbose=True,
-    max_iterations=cfg.max_iterations,
-    handle_parsing_errors=True,
+    agent=agent, tools=TOOLS, verbose=True,
+    max_iterations=cfg.max_iterations, handle_parsing_errors=True,
 )
 
-
-# ── Public Interface ─────────────────────────────────────────────────────────
 
 def run_agent(user_message: str) -> str:
     """
@@ -236,13 +211,11 @@ def run_agent(user_message: str) -> str:
     Passes the message into the agent loop and returns the final summary string.
     """
     log.info(f"Starting agent with message: {user_message}")
-
     try:
         result = agent_executor.invoke({"input": user_message})
         output = result.get("output", "Agent completed but returned no output")
         log.info("Agent finished successfully")
         return output
-
     except Exception as e:
         error_msg = f"An error occurred while running the agent: {str(e)}"
         log.error(error_msg)

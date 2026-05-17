@@ -18,7 +18,7 @@ Usage:
 import shutil
 from pathlib import Path
 from dataclasses import dataclass, field
-from logger import get_logger
+from .logger import get_logger
 
 log = get_logger("rollback")
 
@@ -52,18 +52,15 @@ class RollbackTracker:
     def rollback(self) -> bool:
         """
         Roll back the project setup by deleting the project directory.
-
         Returns True if rollback was performed, False if nothing to roll back.
         Only rolls back once — calling again is a no-op.
         """
         if self._rolled_back:
             log.warning("Rollback already performed — skipping")
             return False
-
         if self.project_dir is None:
             log.warning("No project directory recorded — nothing to roll back")
             return False
-
         if not self.project_dir.exists():
             log.warning(f"Project directory doesn't exist: {self.project_dir}")
             return False
@@ -74,7 +71,6 @@ class RollbackTracker:
             self._rolled_back = True
             log.info(f"Rollback complete — removed {self.project_dir}")
             return True
-
         except Exception as e:
             log.error(f"Rollback failed: {e}")
             return False
@@ -92,7 +88,6 @@ class RollbackTracker:
 
 
 # ── Global tracker for the current run ───────────────────────────────────────
-# Set/reset by main.py before each agent run
 _current_tracker: RollbackTracker | None = None
 
 

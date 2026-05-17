@@ -70,5 +70,5 @@ class Config:
 
 
 # ── Singleton ────────────────────────────────────────────────────────────────
-# Every module does: from config import cfg
+# Every module does: from .config import cfg
 cfg = Config()

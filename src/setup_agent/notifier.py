@@ -17,47 +17,24 @@ import json
 import time
 import threading
 import requests
-from config import cfg
-from logger import get_logger
+from .config import cfg
+from .logger import get_logger
 
 log = get_logger("notifier")
 
-# ── Rate Limiting ────────────────────────────────────────────────────────────
 _last_send_time = 0.0
 _send_lock = threading.Lock()
 
-
-# ── Notification Levels ──────────────────────────────────────────────────────
 LEVEL_CONFIG = {
-    "info": {
-        "priority": "low",
-        "tags": "information_source",
-    },
-    "progress": {
-        "priority": "low",
-        "tags": "hourglass_flowing_sand",
-    },
-    "success": {
-        "priority": "default",
-        "tags": "white_check_mark",
-    },
-    "error": {
-        "priority": "high",
-        "tags": "x",
-    },
-    "milestone": {
-        "priority": "default",
-        "tags": "rocket",
-    },
+    "info": {"priority": "low", "tags": "information_source"},
+    "progress": {"priority": "low", "tags": "hourglass_flowing_sand"},
+    "success": {"priority": "default", "tags": "white_check_mark"},
+    "error": {"priority": "high", "tags": "x"},
+    "milestone": {"priority": "default", "tags": "rocket"},
 }
 
 
-def send(
-    message: str,
-    title: str = "Setup Agent",
-    level: str = "info",
-    force: bool = False,
-) -> bool:
+def send(message: str, title: str = "Setup Agent", level: str = "info", force: bool = False) -> bool:
     """
     Sends a notification to your phone via ntfy.sh.
 
@@ -76,7 +53,6 @@ def send(
         log.warning("NTFY_UPDATE_TOPIC not set — skipping notification")
         return False
 
-    # Rate limiting — skip if we sent too recently (unless forced)
     if not force:
         with _send_lock:
             now = time.time()
@@ -115,23 +91,17 @@ def send(
 
 
 def send_summary(project_name: str, project_type: str, path: str, extras: list[str] | None = None) -> bool:
-    """
-    Sends a rich, formatted final summary notification.
-
-    This is the "done!" notification — always forced past rate limiting.
-    """
+    """Sends a rich, formatted final summary notification."""
     lines = [
         f"📁 Project: {project_name}",
         f"🔧 Type: {project_type}",
         f"📍 Path: {path}",
     ]
-
     if extras:
         lines.append("")
         lines.append("📦 What was set up:")
         for item in extras:
             lines.append(f"  • {item}")
-
     message = "\n".join(lines)
     return send(message, title="Setup Complete ✅", level="success", force=True)
 
@@ -139,13 +109,7 @@ def send_summary(project_name: str, project_type: str, path: str, extras: list[s
 def listen(on_message):
     """
     Opens a persistent streaming connection to ntfy.sh and waits for messages.
-
-    'on_message' is a callback function — called every time a real message arrives.
     Uses exponential backoff on connection loss (5s → 10s → 20s → 60s cap).
-
-    The /json endpoint streams one JSON object per line.
-    stream=True tells requests not to download the whole response,
-    but give us bytes as they trickle in.
     """
     if not cfg.ntfy_inbox_topic:
         log.error("NTFY_INBOX_TOPIC not set — cannot listen for messages")
@@ -153,29 +117,21 @@ def listen(on_message):
 
     url = f"{cfg.ntfy_base_url}/{cfg.ntfy_inbox_topic}/json"
     log.info(f"Listening on topic: {cfg.ntfy_inbox_topic}")
-
-    backoff = 5  # seconds, doubles on each failure
+    backoff = 5
 
     while True:
         try:
             with requests.get(url, stream=True, timeout=None) as response:
-                # Connection succeeded — reset backoff
                 backoff = 5
-
                 for raw_line in response.iter_lines():
                     if not raw_line:
                         continue
-
                     try:
                         event = json.loads(raw_line)
                     except json.JSONDecodeError:
                         log.warning(f"Invalid JSON from ntfy: {raw_line[:100]}")
                         continue
 
-                    # ntfy event types:
-                    #   "open"      — connection established
-                    #   "keepalive" — heartbeat every ~30s
-                    #   "message"   — actual message from phone
                     if event.get("event") == "message":
                         message_text = event.get("message", "").strip()
                         if message_text:
@@ -187,8 +143,7 @@ def listen(on_message):
         except requests.RequestException as e:
             log.warning(f"Connection lost: {e}. Reconnecting in {backoff}s...")
             time.sleep(backoff)
-            backoff = min(backoff * 2, 60)  # exponential backoff, cap at 60s
-
+            backoff = min(backoff * 2, 60)
         except Exception as e:
             log.error(f"Unexpected listener error: {e}. Reconnecting in {backoff}s...")
             time.sleep(backoff)

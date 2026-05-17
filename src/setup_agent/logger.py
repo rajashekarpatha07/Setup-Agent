@@ -13,7 +13,9 @@ from logging.handlers import RotatingFileHandler
 
 
 # ── Log directory ────────────────────────────────────────────────────────────
-LOG_DIR = Path(__file__).parent / "logs"
+# Logs are stored at the project root's logs/ directory, not inside the package
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+LOG_DIR = _PROJECT_ROOT / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 LOG_FILE = LOG_DIR / "agent.log"
 
@@ -42,7 +44,7 @@ def get_logger(name: str) -> logging.Logger:
     Create a named logger with console + file handlers.
 
     Usage:
-        from logger import get_logger
+        from .logger import get_logger
         log = get_logger(__name__)
         log.info("Something happened")
     """

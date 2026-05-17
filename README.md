@@ -7,39 +7,47 @@
   <img src="https://img.shields.io/badge/LangChain-agent-green?logo=chainlink&logoColor=white" alt="LangChain">
   <img src="https://img.shields.io/badge/Groq-LLM-orange?logo=lightning&logoColor=white" alt="Groq">
   <img src="https://img.shields.io/badge/13-templates-purple" alt="13 Templates">
-  <img src="https://img.shields.io/badge/version-2.1.0-brightgreen" alt="Version 2.1.0">
+  <img src="https://img.shields.io/badge/license-MIT-brightgreen" alt="MIT License">
+  <img src="https://img.shields.io/badge/version-2.1.0-blue" alt="Version 2.1.0">
+</p>
+
+---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/terminal-dashboard.png" alt="Rich Terminal Dashboard" width="600">
+  <br>
+  <em>Rich terminal dashboard — live status, progress tracking, and project history</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/web-dashboard.png" alt="Web Dashboard" width="600">
+  <br>
+  <em>Web dashboard — real-time stats, project history, and template browser</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/cli-help.png" alt="CLI Help" width="600">
+  <br>
+  <em>Professional CLI — 7 subcommands for every workflow</em>
 </p>
 
 ---
 
 ## ✨ Features
 
-### 🎨 Rich Terminal Dashboard
-Beautiful live-updating terminal UI with status panels, progress tracking, and command history — powered by [Rich](https://github.com/Textualize/rich).
-
-### 🌐 Web Dashboard
-Local browser-based dashboard at `http://localhost:8745` with real-time stats, project history, health checks, and the ability to trigger new builds.
-
-### 📱 Phone-to-Laptop Pipeline
-Send a natural language message via [ntfy.sh](https://ntfy.sh) from your phone → agent scaffolds the project → sends you a completion notification.
-
-### 🧠 Multi-Language AI Agent
-Supports **13 project types** across 7 ecosystems — the LLM detects what you want and picks the right setup flow.
-
-### 🔄 Auto-Rollback
-If a setup fails midway, the agent automatically cleans up the incomplete project directory.
-
-### 🏥 Health Checks
-Verify created projects actually work — TypeScript compilation, package integrity, git initialization, and more.
-
-### 📊 Project History
-SQLite-backed history database tracks every project: timing, status, command logs, and aggregate statistics.
-
-### 🖥️ Professional CLI
-Full command-line interface with subcommands — no more remembering `python main.py` invocations.
-
-### 🔒 Hardened Sandbox
-Multi-layer security: command allowlisting, shell injection prevention, path sandboxing, input validation.
+| Feature | Description |
+|---------|-------------|
+| 🎨 **Rich Terminal Dashboard** | Beautiful live-updating TUI with status panels, progress tracking, and command history |
+| 🌐 **Web Dashboard** | Browser-based dashboard at `localhost:8745` with real-time stats and one-click project creation |
+| 📱 **Phone-to-Laptop Pipeline** | Send natural language via [ntfy.sh](https://ntfy.sh) → agent scaffolds the project → sends completion notification |
+| 🧠 **Multi-Language AI Agent** | Supports **13 project types** across 7 ecosystems — auto-detects your intent |
+| 🔄 **Auto-Rollback** | Failed setups are automatically cleaned up |
+| 🏥 **Health Checks** | Verify projects work — TypeScript compilation, package integrity, git status |
+| 📊 **Project History** | SQLite-backed database tracking every project with timing and stats |
+| 🖥️ **Professional CLI** | Click-based CLI with 7 subcommands |
+| 🔒 **Hardened Sandbox** | Command allowlisting, shell injection prevention, path sandboxing |
 
 ---
 
@@ -57,49 +65,7 @@ Multi-layer security: command allowlisting, shell injection prevention, path san
 
 ---
 
-## 🏗️ Architecture
-
-```
-📱 Phone (ntfy.sh)  ──→  main.py (listener + queue)
-🖥️  Terminal (CLI)   ──→       │
-🌐 Web Dashboard     ──→       │
-                              ▼
-                         agent.py (LangChain + Groq LLM)
-                              │
-                    ┌─────────┼─────────┐
-                    ▼         ▼         ▼
-              tools.py   templates.py  hooks.py
-                    │
-              ┌─────┼─────┐
-              ▼     ▼     ▼
-          sandbox  history  rollback
-              │
-              ▼
-        subprocess (shell commands)
-```
-
-| Module | Purpose |
-|--------|---------|
-| `cli.py` | Click-based CLI with 7 subcommands |
-| `main.py` | Request queue, input validation, lifecycle orchestration |
-| `agent.py` | LangChain agent with multi-language system prompt |
-| `tools.py` | Sandboxed tools the LLM can invoke |
-| `templates.py` | 13 project template definitions |
-| `dashboard.py` | Rich Live terminal dashboard |
-| `web/server.py` | HTTP API for the web dashboard |
-| `web/index.html` | Browser-based dashboard UI |
-| `sandbox.py` | Security layer (command + path validation) |
-| `history.py` | SQLite project history database |
-| `rollback.py` | Auto-rollback on setup failure |
-| `hooks.py` | Post-setup hooks (VS Code, start commands) |
-| `healthcheck.py` | Per-language project verification |
-| `config.py` | Centralized configuration from env vars |
-| `logger.py` | Structured logging (console + file) |
-| `notifier.py` | ntfy.sh communication with rate limiting |
-
----
-
-## 📦 Setup
+## 📦 Quick Start
 
 ### Prerequisites
 
@@ -118,7 +84,10 @@ uv sync
 
 ### Configure
 
-Create a `.env` file:
+```bash
+cp .env.example .env
+# Edit .env with your API key and ntfy topics
+```
 
 ```env
 # Required
@@ -187,6 +156,68 @@ setup-agent dashboard
 
 ---
 
+## 🏗️ Architecture
+
+```
+📱 Phone (ntfy.sh)  ──→  main.py (listener + queue)
+🖥️  Terminal (CLI)   ──→       │
+🌐 Web Dashboard     ──→       │
+                              ▼
+                         agent.py (LangChain + Groq LLM)
+                              │
+                    ┌─────────┼─────────┐
+                    ▼         ▼         ▼
+              tools.py   templates.py  hooks.py
+                    │
+              ┌─────┼─────┐
+              ▼     ▼     ▼
+          sandbox  history  rollback
+              │
+              ▼
+        subprocess (shell commands)
+```
+
+---
+
+## 📁 Project Structure
+
+```
+SetUp-Agent/
+├── src/
+│   └── setup_agent/           # Main Python package
+│       ├── __init__.py        # Package init + version
+│       ├── agent.py           # LangChain agent (the brain)
+│       ├── cli.py             # Click CLI with 7 subcommands
+│       ├── config.py          # Centralized env-based config
+│       ├── dashboard.py       # Rich Live terminal dashboard
+│       ├── healthcheck.py     # Per-language project verification
+│       ├── history.py         # SQLite project history database
+│       ├── hooks.py           # Post-setup hooks (VS Code, start commands)
+│       ├── logger.py          # Structured logging (console + file)
+│       ├── main.py            # Listener, queue, lifecycle orchestration
+│       ├── notifier.py        # ntfy.sh communication + rate limiting
+│       ├── rollback.py        # Auto-rollback on setup failure
+│       ├── sandbox.py         # Security layer (command + path validation)
+│       ├── templates.py       # 13 project template definitions
+│       ├── tools.py           # Sandboxed tools the LLM can invoke
+│       └── web/
+│           ├── __init__.py
+│           ├── server.py      # HTTP API server
+│           └── index.html     # Browser-based dashboard UI
+├── docs/
+│   └── screenshots/           # Screenshots for README
+├── data/                      # SQLite DB (git-ignored)
+├── logs/                      # Log files (git-ignored)
+├── .env.example               # Example configuration
+├── .gitignore
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+└── pyproject.toml
+```
+
+---
+
 ## 🔒 Security
 
 | Layer | Protection |
@@ -203,48 +234,6 @@ setup-agent dashboard
 
 ---
 
-## 📊 Web Dashboard
-
-Access at `http://localhost:8745` when running `setup-agent listen` or `setup-agent dashboard`.
-
-**Features:**
-- Real-time project statistics
-- Full project history table
-- One-click health checks
-- Create projects from browser
-- Template browser with click-to-use
-- Auto-refreshes every 10 seconds
-
----
-
-## 📁 Project Structure
-
-```
-SetUp-Agent/
-├── cli.py              # Click CLI entry point
-├── main.py             # Listener, queue, lifecycle
-├── agent.py            # LangChain agent
-├── tools.py            # Sandboxed tool functions
-├── templates.py        # 13 project templates
-├── sandbox.py          # Security layer
-├── config.py           # Centralized config
-├── logger.py           # Structured logging
-├── notifier.py         # ntfy.sh communication
-├── dashboard.py        # Rich terminal UI
-├── history.py          # SQLite history DB
-├── rollback.py         # Auto-rollback system
-├── hooks.py            # Post-setup hooks
-├── healthcheck.py      # Project verification
-├── web/
-│   ├── server.py       # HTTP API server
-│   └── index.html      # Web dashboard
-├── pyproject.toml
-├── .env                # Your config (git-ignored)
-└── README.md
-```
-
----
-
 ## 🛠️ Tech Stack
 
 - **AI**: LangChain + Groq (Llama 3.3 70B)
@@ -257,6 +246,10 @@ SetUp-Agent/
 
 ---
 
-## License
+## 🤝 Contributing
 
-MIT
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

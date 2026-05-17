@@ -14,15 +14,13 @@ Hooks are configurable via environment variables:
 import subprocess
 import shutil
 from pathlib import Path
-from config import cfg
-from logger import get_logger
+from .config import cfg
+from .logger import get_logger
 
 log = get_logger("hooks")
 
 
 # ── Getting Started Commands ─────────────────────────────────────────────────
-# Maps project types to their "how to run" commands
-
 GETTING_STARTED = {
     "react-vite": ["cd {path}", "npm run dev"],
     "nextjs": ["cd {path}", "npm run dev"],
@@ -41,19 +39,13 @@ GETTING_STARTED = {
 
 
 def open_in_vscode(project_path: str) -> bool:
-    """
-    Open the project directory in VS Code.
-    Returns True if successful, False otherwise.
-    """
+    """Open the project directory in VS Code."""
     if not cfg.hook_open_vscode:
         log.debug("VS Code hook disabled")
         return False
-
-    # Check if code command exists
     if not shutil.which("code"):
         log.warning("VS Code 'code' command not found in PATH — skipping")
         return False
-
     try:
         subprocess.Popen(
             ["code", project_path],
@@ -68,10 +60,7 @@ def open_in_vscode(project_path: str) -> bool:
 
 
 def get_start_commands(project_type: str, project_path: str) -> list[str]:
-    """
-    Get the getting-started commands for a project type.
-    Returns a list of command strings.
-    """
+    """Get the getting-started commands for a project type."""
     commands = GETTING_STARTED.get(project_type, [f"cd {project_path}"])
     return [cmd.format(path=project_path) for cmd in commands]
 
@@ -81,7 +70,6 @@ def format_start_commands(project_type: str, project_path: str) -> str:
     commands = get_start_commands(project_type, project_path)
     if not commands:
         return ""
-
     lines = ["", "🚀 Getting started:"]
     for cmd in commands:
         lines.append(f"   $ {cmd}")
@@ -91,23 +79,13 @@ def format_start_commands(project_type: str, project_path: str) -> str:
 def run_post_setup_hooks(project_name: str, project_type: str, project_path: str) -> dict:
     """
     Run all post-setup hooks.
-
     Returns a dict with results:
-        {
-            "vscode_opened": True/False,
-            "start_commands": ["cd ...", "npm run dev"],
-        }
+        {"vscode_opened": True/False, "start_commands": ["cd ...", "npm run dev"]}
     """
     log.info(f"Running post-setup hooks for '{project_name}' ({project_type})")
     results = {}
-
-    # Hook 1: Open in VS Code
     results["vscode_opened"] = open_in_vscode(project_path)
-
-    # Hook 2: Get start commands
     results["start_commands"] = get_start_commands(project_type, project_path)
-
     if results["start_commands"]:
         log.info(f"Getting started: {' → '.join(results['start_commands'])}")
-
     return results

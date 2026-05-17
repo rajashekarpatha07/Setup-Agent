@@ -5,7 +5,7 @@ Uses SQLite (Python stdlib) to track every project ever created.
 Stores: project name, type, path, duration, status, command log, packages.
 
 Usage:
-    from history import history_db
+    from .history import history_db
     history_db.record_start("my-app", "react-vite", "/path/to/my-app")
     history_db.record_step("my-app", "npm init -y", "SUCCESS")
     history_db.record_complete("my-app", status="success")
@@ -18,12 +18,14 @@ import json
 import time
 from pathlib import Path
 from datetime import datetime, timezone
-from dataclasses import dataclass, field, asdict
-from logger import get_logger
+from dataclasses import dataclass, field
+from .logger import get_logger
 
 log = get_logger("history")
 
-DB_PATH = Path(__file__).parent / "data" / "history.db"
+# Database stored at project root's data/ directory
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+DB_PATH = _PROJECT_ROOT / "data" / "history.db"
 
 
 @dataclass
@@ -33,7 +35,7 @@ class ProjectRecord:
     name: str = ""
     project_type: str = ""
     path: str = ""
-    status: str = "in_progress"       # in_progress, success, failed, rolled_back
+    status: str = "in_progress"
     started_at: str = ""
     completed_at: str = ""
     duration_seconds: float = 0.0
@@ -50,7 +52,6 @@ class HistoryDB:
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
-        # Track in-progress builds for timing
         self._start_times: dict[str, float] = {}
 
     def _init_db(self):
@@ -76,16 +77,12 @@ class HistoryDB:
         log.debug(f"History database initialized at {self.db_path}")
 
     def _connect(self) -> sqlite3.Connection:
-        """Create a database connection."""
         conn = sqlite3.connect(str(self.db_path))
         conn.row_factory = sqlite3.Row
         return conn
 
     def _now(self) -> str:
-        """Current UTC timestamp as ISO string."""
         return datetime.now(timezone.utc).isoformat()
-
-    # ── Recording Methods ────────────────────────────────────────────────
 
     def record_start(self, name: str, project_type: str = "", path: str = "", user_message: str = "") -> int:
         """Record the start of a new project setup. Returns the record ID."""
@@ -110,11 +107,10 @@ class HistoryDB:
             ).fetchone()
             if not row:
                 return
-
             log_entries = json.loads(row["command_log"])
             log_entries.append({
                 "command": command,
-                "result": result[:200],  # truncate result
+                "result": result[:200],
                 "timestamp": self._now(),
             })
             conn.execute(
@@ -132,7 +128,6 @@ class HistoryDB:
             ).fetchone()
             if not row:
                 return
-
             updates = []
             params = []
             if project_type is not None:
@@ -141,7 +136,6 @@ class HistoryDB:
             if path is not None:
                 updates.append("path = ?")
                 params.append(path)
-
             if updates:
                 params.append(row["id"])
                 conn.execute(
@@ -160,25 +154,15 @@ class HistoryDB:
             ).fetchone()
             if not row:
                 return
-
             conn.execute(
                 """UPDATE projects SET
                     status = ?, completed_at = ?, duration_seconds = ?,
                     error_message = ?, packages = ?
                    WHERE id = ?""",
-                (
-                    status,
-                    self._now(),
-                    round(elapsed, 1),
-                    error_message,
-                    json.dumps(packages or []),
-                    row["id"],
-                ),
+                (status, self._now(), round(elapsed, 1), error_message, json.dumps(packages or []), row["id"]),
             )
             conn.commit()
             log.info(f"History: project '{name}' → {status} ({elapsed:.1f}s)")
-
-    # ── Query Methods ────────────────────────────────────────────────────
 
     def get_all(self, limit: int = 50) -> list[dict]:
         """Get all project records, most recent first."""
@@ -209,18 +193,13 @@ class HistoryDB:
             failed = conn.execute("SELECT COUNT(*) as c FROM projects WHERE status = 'failed'").fetchone()["c"]
             rolled_back = conn.execute("SELECT COUNT(*) as c FROM projects WHERE status = 'rolled_back'").fetchone()["c"]
             in_progress = conn.execute("SELECT COUNT(*) as c FROM projects WHERE status = 'in_progress'").fetchone()["c"]
-
             avg_duration = conn.execute(
                 "SELECT AVG(duration_seconds) as avg FROM projects WHERE status = 'success' AND duration_seconds > 0"
             ).fetchone()["avg"] or 0.0
-
-            # Projects by type
             type_rows = conn.execute(
                 "SELECT project_type, COUNT(*) as c FROM projects WHERE project_type != '' GROUP BY project_type ORDER BY c DESC"
             ).fetchall()
             by_type = {r["project_type"]: r["c"] for r in type_rows}
-
-            # Recent activity (last 7 days)
             recent_rows = conn.execute(
                 """SELECT DATE(started_at) as day, COUNT(*) as c
                    FROM projects
