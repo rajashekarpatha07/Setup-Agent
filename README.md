@@ -111,7 +111,7 @@ Multi-layer security: command allowlisting, shell injection prevention, path san
 ### Install
 
 ```bash
-git clone https://github.com/yourusername/SetUp-Agent.git
+git clone https://github.com/rajashekarpatha07/SetUp-Agent.git
 cd SetUp-Agent
 uv sync
 ```
